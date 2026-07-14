@@ -61,4 +61,18 @@ nav ul li a{
     font-size:18px;
     cursor:pointer;
     border-radius:8px;
+}.hero {
+     background-image: url("images/hero.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+
+    color: white;
 }
