@@ -12,7 +12,8 @@ A safe, discreet web application for reporting gender-based violence (GBV), aler
 - **Quick Exit** — Instantly leave the site (redirects to a neutral page)
 - **Disguise Mode** — Hides the app behind a fake weather screen; triple-tap to unlock
 - **Resources** — Direct call/text links to helplines, shelters, and support services
-- **Backend server** — Express.js API for receiving and storing reports server-side
+- **Backend server** — Express.js API for receiving, storing, and managing reports server-side
+- **Admin Dashboard** — Advanced interface for authorities to manage cases, update status, and track response priority
 
 ## Project Structure
 
@@ -83,6 +84,8 @@ npx serve .
 | POST | `/api/reports` | Submit a new GBV report |
 | GET | `/api/reports` | Get all reports (admin) |
 | GET | `/api/reports/:id` | Get a single report |
+| PATCH | `/api/reports/:id` | Update report status/priority/notes |
+| DELETE | `/api/reports/:id` | Delete a report |
 | GET | `/api/authorities` | List available authorities |
 | GET | `/api/resources` | List support resources |
 
