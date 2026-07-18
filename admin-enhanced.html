@@ -500,13 +500,13 @@
         }
 
         // ── Select Report ──
-        function selectReport(reportId) {
+        async function selectReport(reportId) {
             selectedReport = allReports.find(r => r.id === reportId);
             document.getElementById('messageInput').disabled = false;
             document.getElementById('sendBtn').disabled = false;
             renderReports();
             renderCaseInfo();
-            loadMessages();
+            await loadMessages();  // Wait for messages to load
             renderMessages();
             updateChatHeader();
         }
@@ -517,9 +517,12 @@
             try {
                 const res = await fetch(`/api/reports/${selectedReport.id}/messages`);
                 const data = await res.json();
-                allMessages = data.messages;
+                // Merge new messages with existing ones (avoid duplicates)
+                allMessages = data.messages || [];
+                console.log(`Loaded ${allMessages.length} messages for report ${selectedReport.id}`);
             } catch (err) {
                 console.error('Failed to load messages:', err);
+                allMessages = [];
             }
         }
 
@@ -531,13 +534,13 @@
                 return;
             }
 
-            const reportMessages = allMessages.filter(m => m.reportId === selectedReport.id);
-            if (reportMessages.length === 0) {
+            // Since we load messages for the selected report, allMessages should already be filtered
+            if (!allMessages || allMessages.length === 0) {
                 container.innerHTML = '<div class="empty-state">No messages yet. Start the conversation.</div>';
                 return;
             }
 
-            container.innerHTML = reportMessages.map(msg => `
+            container.innerHTML = allMessages.map(msg => `
                 <div class="message ${msg.senderRole}">
                     <div>
                         <div class="message-bubble">${escapeHtml(msg.message)}</div>
