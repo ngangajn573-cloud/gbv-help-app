@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Safe, discreet help for gender-based violence. Report incidents and alert trusted contacts.">
+    <title>GBV Help App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Quick Exit: instantly leaves the site -->
+    <button type="button" class="quick-exit" id="quickExit" aria-label="Quick exit to weather website">
+        Quick Exit
+    </button>
+
+    <!-- Disguise mode overlay (looks like a weather app) -->
+    <div class="disguise-screen hidden" id="disguiseScreen">
+        <div class="disguise-header">Weather Today</div>
+        <div class="disguise-temp">24°C</div>
+        <div class="disguise-desc">Partly cloudy · Tap logo 3× to unlock</div>
+        <div class="disguise-forecast">
+            <span>Mon 26°</span>
+            <span>Tue 23°</span>
+            <span>Wed 25°</span>
+        </div>
+    </div>
+
+    <div class="app" id="mainApp">
+
+        <nav>
+            <h2 class="nav-logo" id="navLogo">GBV Help</h2>
+            <button type="button" class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home" class="nav-link active">Home</a></li>
+                <li><a href="#report" class="nav-link">Report</a></li>
+                <li><a href="#emergency" class="nav-link">Emergency</a></li>
+                <li><a href="#contacts" class="nav-link">Trusted Contacts</a></li>
+                <li><a href="#myreports" class="nav-link">My Reports</a></li>
+                <li><a href="#messages" class="nav-link">📬 Messages</a></li>
+                <li><a href="#resources" class="nav-link">Resources</a></li>
+            </ul>
+        </nav>
+
+        <!-- HOME -->
+        <section id="home" class="page active">
+            <div class="hero">
+                <div class="hero-content">
+                    <h1>You Are Not Alone</h1>
+                    <p>
+                        Report gender-based violence safely and discreetly. Alert trusted contacts
+                        in an emergency, or reach authorities without drawing attention.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#report" class="btn btn-primary">Report Safely</a>
+                        <a href="#emergency" class="btn btn-danger">Emergency SOS</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <article class="card">
+                    <h3>Discreet Reporting</h3>
+                    <p>Submit reports anonymously. No account required. Use disguise mode if someone is nearby.</p>
+                    <a href="#report" class="card-link">Report now →</a>
+                </article>
+                <article class="card">
+                    <h3>One-Tap SOS</h3>
+                    <p>Instantly notify your trusted contacts with your location when you feel in danger.</p>
+                    <a href="#emergency" class="card-link">Set up SOS →</a>
+                </article>
+                <article class="card">
+                    <h3>Authority Support</h3>
+                    <p>Connect directly with police, helplines, and GBV support services in your area.</p>
+                    <a href="#resources" class="card-link">View resources →</a>
+                </article>
+            </div>
+
+            <div class="safety-banner">
+                <p><strong>Safety tip:</strong> Use <em>Quick Exit</em> (top-right) to leave this site instantly.
+                    Enable <em>Disguise Mode</em> on the Emergency page to hide the app.</p>
+                <button type="button" class="btn btn-outline" id="enableDisguise">Enable Disguise Mode</button>
+            </div>
+        </section>
+
+        <!-- REPORT -->
+        <section id="report" class="page">
+            <div class="page-header">
+                <h2>Report GBV</h2>
+                <p>Your report can be sent to relevant authorities. All fields except the incident description are optional.</p>
+            </div>
+
+            <form id="reportForm" class="form">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="anonymousReport" checked>
+                        Report anonymously
+                    </label>
+                </div>
+
+                <div class="form-row" id="identityFields">
+                    <div class="form-group">
+                        <label for="reporterName">Your name</label>
+                        <input type="text" id="reporterName" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="reporterPhone">Phone number</label>
+                        <input type="tel" id="reporterPhone" placeholder="Optional">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="incidentType">Type of incident *</label>
+                    <select id="incidentType" required>
+                        <option value="">Select type</option>
+                        <option value="physical">Physical violence</option>
+                        <option value="sexual">Sexual violence</option>
+                        <option value="emotional">Emotional / psychological abuse</option>
+                        <option value="economic">Economic abuse</option>
+                        <option value="stalking">Stalking / harassment</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="incidentDescription">What happened? *</label>
+                    <textarea id="incidentDescription" rows="5" required
+                        placeholder="Describe the incident. Include date, time, and location if you can."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="incidentLocation">Location</label>
+                    <input type="text" id="incidentLocation" placeholder="Address or area">
+                    <button type="button" class="btn btn-small" id="useMyLocation">Use my current location</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="authoritySelect">Send report to *</label>
+                    <select id="authoritySelect" required>
+                        <option value="">Select authority</option>
+                        <option value="police">Police / Law Enforcement</option>
+                        <option value="gbv-helpline">National GBV Helpline</option>
+                        <option value="social-services">Social Services</option>
+                        <option value="legal-aid">Legal Aid</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="notifyTrustedContacts">
+                        Also alert my trusted contacts about this report
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Submit Report</button>
+            </form>
+
+            <div id="reportSuccess" class="success-message hidden">
+                <h3>Report submitted</h3>
+                <p id="reportSuccessText"></p>
+            </div>
+        </section>
+
+        <!-- EMERGENCY SOS -->
+        <section id="emergency" class="page">
+            <div class="page-header">
+                <h2>Emergency SOS</h2>
+                <p>Press the button below to immediately alert all your trusted contacts with an emergency message and your location.</p>
+            </div>
+
+            <div class="sos-container">
+                <button type="button" class="sos-button" id="sosButton" aria-label="Send emergency SOS">
+                    <span class="sos-label">SOS</span>
+                    <span class="sos-hint">Hold for 2 seconds</span>
+                </button>
+                <p class="sos-status" id="sosStatus">Ready. Add trusted contacts first if you haven't.</p>
+            </div>
+
+            <div class="emergency-message-box">
+                <label for="emergencyMessage">Emergency message sent to contacts</label>
+                <textarea id="emergencyMessage" rows="3">I am in danger and need help immediately. Please contact me or call the authorities. This is an automated alert from GBV Help App.</textarea>
+            </div>
+
+            <div class="emergency-options">
+                <label>
+                    <input type="checkbox" id="includeLocation" checked>
+                    Include my GPS location
+                </label>
+                <label>
+                    <input type="checkbox" id="callPoliceAfterSOS">
+                    Also show police contact after SOS
+                </label>
+            </div>
+
+            <div class="disguise-control">
+                <h3>Disguise Mode</h3>
+                <p>Hides this app behind a fake weather screen. Triple-tap the logo to unlock.</p>
+                <button type="button" class="btn btn-outline" id="toggleDisguise">Turn On Disguise Mode</button>
+            </div>
+        </section>
+
+        <!-- TRUSTED CONTACTS -->
+        <section id="contacts" class="page">
+            <div class="page-header">
+                <h2>Trusted Contacts</h2>
+                <p>Add people you trust who will receive emergency alerts. Contacts are stored only on this device.</p>
+            </div>
+
+            <form id="contactForm" class="form form-inline">
+                <div class="form-group">
+                    <label for="contactName">Name</label>
+                    <input type="text" id="contactName" required placeholder="e.g. Sister, Friend">
+                </div>
+                <div class="form-group">
+                    <label for="contactPhone">Phone number</label>
+                    <input type="tel" id="contactPhone" required placeholder="+263 77 000 0000">
+                </div>
+                <div class="form-group">
+                    <label for="contactRelation">Relationship</label>
+                    <input type="text" id="contactRelation" placeholder="Family, friend, neighbor">
+                </div>
+                <button type="submit" class="btn btn-primary">Add Contact</button>
+            </form>
+
+            <ul class="contacts-list" id="contactsList">
+                <li class="contacts-empty">No trusted contacts yet. Add at least one for SOS to work.</li>
+            </ul>
+        </section>
+
+        <!-- MY REPORTS -->
+        <section id="myreports" class="page">
+            <div class="page-header">
+                <h2>My Reports</h2>
+                <p>View reports you have submitted from this device. Reports are stored locally.</p>
+            </div>
+
+            <div id="myReportsList"></div>
+
+            <div id="myReportsEmpty" class="card" style="text-align:center; margin-top:20px;">
+                <p style="color: var(--text-muted);">No reports submitted yet from this device.</p>
+                <a href="#report" class="btn btn-primary" style="margin-top:12px;">Submit a Report</a>
+            </div>
+        </section>
+
+        <!-- MESSAGES -->
+        <section id="messages" class="page">
+            <div class="page-header">
+                <h2>📬 Messages from Authorities</h2>
+                <p>Receive updates and support messages from authorities handling your case.</p>
+            </div>
+
+            <div id="messagesList" style="margin-top:20px;"></div>
+
+            <div id="messagesEmpty" class="card" style="text-align:center; margin-top:20px;">
+                <p style="color: var(--text-muted);">No messages yet. Authorities will reach out here once they receive your report.</p>
+            </div>
+        </section>
+
+        <!-- RESOURCES -->
+        <section id="resources" class="page">
+            <div class="page-header">
+                <h2>Resources &amp; Authorities</h2>
+                <p>Reach out to these services anytime. Calls and messages go directly to them.</p>
+            </div>
+
+            <div class="resources-grid" id="resourcesGrid"></div>
+
+            <div class="page-header">
+                <h3>Going to a Police Station?</h3>
+                <p>Use discreet reporting above, or call ahead so officers know you are coming.</p>
+            </div>
+            <a href="#report" class="btn btn-primary">File a discreet report</a>
+        </section>
+
+        <footer>
+            <p>GBV Help App · Your safety matters · Data stays on your device unless you submit a report</p>
+            <p class="footer-note">If you are in immediate danger, call emergency services directly.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // My Reports viewer (runs after app.js)
+        function renderMyReports() {
+            const list = document.getElementById('myReportsList');
+            const empty = document.getElementById('myReportsEmpty');
+            try {
+                const reports = JSON.parse(localStorage.getItem('gbv_reports_log')) || [];
+                if (reports.length === 0) {
+                    list.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                empty.classList.add('hidden');
+                list.innerHTML = reports.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(r => `
+                    <div class="card" style="margin-bottom:12px; border-left:4px solid var(--purple);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <strong style="color:var(--purple);">${escapeHtml(r.type || 'Unknown')}</strong>
+                                <span style="color:var(--text-muted); font-size:13px; margin-left:8px;">→ ${escapeHtml(r.authority || 'unknown')}</span>
+                            </div>
+                            <span style="font-size:12px; color:var(--text-muted);">${r.timestamp ? new Date(r.timestamp).toLocaleString() : ''}</span>
+                        </div>
+                        <p style="margin-top:10px; font-size:14px; color:var(--text-muted);">${escapeHtml((r.description || '').substring(0, 150))}${(r.description || '').length > 150 ? '...' : ''}</p>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">${r.anonymous ? 'Anonymous' : 'Named'} · ${r.location || 'No location'}</div>
+                        <div style="margin-top:8px; font-size:11px;">
+                            <span style="color:${r.status === 'submitted' ? 'var(--success)' : 'var(--warning)'}">● ${r.status || 'saved'}</span>
+                            ${r.serverNote ? '<span style="color:var(--success); margin-left:8px;">✓ Server confirmed</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                list.innerHTML = '<p style="color:var(--text-muted);">Error loading reports.</p>';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => renderMyReports());
+        // Re-render when navigating to My Reports page
+        (function() {
+            const observer = new MutationObserver(() => {
+                const page = document.getElementById('myreports');
+                if (page && page.classList.contains('active')) {
+                    renderMyReports();
+                }
+            });
+            observer.observe(document.getElementById('myreports'), { attributes: true, attributeFilter: ['class'] });
+        })();
+    </script>
+</body>
+
+</html>
