@@ -5,6 +5,9 @@ const STORAGE_KEYS = {
     reports: 'gbv_reports_log'
 };
 
+// ── Detect if running with backend server ──
+const API_BASE = '';  // Same origin since server serves frontend
+
 const AUTHORITIES = {
     police: {
         name: 'Police / Law Enforcement',
@@ -76,6 +79,7 @@ function init() {
     setupSOS();
     renderResources();
     setupAnonymousToggle();
+    checkServerHealth();
 }
 
 /* ── Navigation ── */
@@ -385,17 +389,50 @@ async function submitReport() {
     const anonymous = document.getElementById('anonymousReport').checked;
     const authorityKey = document.getElementById('authoritySelect').value;
     const authority = AUTHORITIES[authorityKey];
+    const notifyContacts = document.getElementById('notifyTrustedContacts').checked;
 
-    const report = {
-        id: Date.now().toString(),
-        timestamp: new Date().toISOString(),
+    const reportData = {
         anonymous,
-        name: anonymous ? 'Anonymous' : document.getElementById('reporterName').value.trim(),
+        name: anonymous ? '' : document.getElementById('reporterName').value.trim(),
         phone: anonymous ? '' : document.getElementById('reporterPhone').value.trim(),
         type: document.getElementById('incidentType').value,
         description: document.getElementById('incidentDescription').value.trim(),
         location: document.getElementById('incidentLocation').value.trim(),
         authority: authorityKey,
+        notifyContacts
+    };
+
+    // Try submitting to backend server first
+    try {
+        const response = await fetch(`${API_BASE}/api/reports`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(reportData)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            showReportSuccess(
+                result.message || 'Your report has been submitted successfully. A trusted authority will follow up.',
+                true
+            );
+            // Still save locally as backup
+            reportData.id = Date.now().toString();
+            reportData.timestamp = new Date().toISOString();
+            reportData.status = 'submitted';
+            saveReportLocally(reportData);
+            notifyTrustedContactsWithReport(reportData);
+            return;
+        }
+    } catch (err) {
+        console.log('Backend not available, using offline mode:', err.message);
+    }
+
+    // Fallback: offline mode - save locally and open email draft
+    const report = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        ...reportData,
         status: 'submitted'
     };
 
@@ -407,20 +444,40 @@ async function submitReport() {
 
     window.open(`mailto:${authority.email}?subject=${subject}&body=${body}`, '_self');
 
+    showReportSuccess(
+        `Your report has been saved locally and an email draft opened for ${authority.name}. ` +
+        'Send the email to complete submission. You can also call them directly.',
+        false
+    );
+
+    notifyTrustedContactsWithReport(report);
+}
+
+function showReportSuccess(message, serverSubmitted) {
     const successEl = document.getElementById('reportSuccess');
     const successText = document.getElementById('reportSuccessText');
-    successText.textContent =
-        `Your report has been saved and an email draft opened for ${authority.name}. ` +
-        'Send the email to complete submission. You can also call them directly.';
-    successEl.classList.remove('hidden');
-    document.getElementById('reportForm').classList.add('hidden');
+    const formEl = document.getElementById('reportForm');
 
-    if (document.getElementById('notifyTrustedContacts').checked) {
-        const contacts = getContacts();
-        const alertMsg = `Someone I trust submitted a GBV report. I may need support. Location: ${report.location || 'not provided'}`;
-        for (const contact of contacts) {
-            openSMS(contact.phone, alertMsg);
-        }
+    successText.textContent = message;
+    successEl.classList.remove('hidden');
+    formEl.classList.add('hidden');
+
+    // Add server badge if submitted to server
+    if (serverSubmitted) {
+        const badge = document.createElement('span');
+        badge.className = 'server-badge';
+        badge.textContent = ' ✓ Sent to server';
+        badge.style.cssText = 'display:block; color:#2e7d32; font-weight:700; margin-top:8px;';
+        successText.appendChild(badge);
+    }
+}
+
+function notifyTrustedContactsWithReport(report) {
+    if (!document.getElementById('notifyTrustedContacts').checked) return;
+    const contacts = getContacts();
+    const alertMsg = `Someone I trust submitted a GBV report. I may need support. Location: ${report.location || 'not provided'}`;
+    for (const contact of contacts) {
+        openSMS(contact.phone, alertMsg);
     }
 }
 
@@ -465,6 +522,19 @@ function renderResources() {
             </div>
         </article>
     `).join('');
+}
+
+/* ── Server Health Check ── */
+
+async function checkServerHealth() {
+    try {
+        const response = await fetch(`${API_BASE}/api/health`, { cache: 'no-store' });
+        if (response.ok) {
+            console.log('✅ Backend server is connected.');
+        }
+    } catch {
+        console.log('ℹ️ Backend server not detected. Running in offline mode — reports will be saved locally.');
+    }
 }
 
 /* ── Utilities ── */

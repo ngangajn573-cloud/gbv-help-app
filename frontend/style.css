@@ -21,9 +21,28 @@
 
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
-    background: var(--bg);
+    background: url('images/hero.jpg') no-repeat center center fixed;
+    background-size: cover;
     color: var(--text);
     line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* Dark overlay on body background so content stays readable */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 0;
+}
+
+.app {
+    position: relative;
+    z-index: 1;
 }
 
 .hidden {
@@ -63,6 +82,12 @@ body {
     text-align: center;
     padding: 40px;
     cursor: default;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
 }
 
 .disguise-header {
@@ -170,12 +195,13 @@ nav {
 
 /* Hero */
 .hero {
-    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-light) 100%);
+    background: linear-gradient(135deg, rgba(106, 27, 154, 0.85) 0%, rgba(156, 39, 176, 0.85) 100%);
     color: white;
     text-align: center;
     padding: 80px 24px;
     margin: 0 -24px 40px;
     border-radius: 0 0 20px 20px;
+    backdrop-filter: blur(2px);
 }
 
 .hero h1 {
