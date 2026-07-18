@@ -3,8 +3,8 @@
  * 
  * This server handles:
  * - Serving the frontend static files
- * - Receiving and storing GBV reports
- * - Providing API endpoints for report management
+ * - Receiving and storing GBV reports (persisted to JSON file)
+ * - Admin dashboard API for viewing reports
  * - Health check endpoint
  */
 
@@ -12,9 +12,13 @@ const express = require('express');
 const cors = require('cors');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ── File-based storage path ──
+const REPORTS_FILE = path.join(__dirname, 'reports.json');
 
 // ── Middleware ──
 
@@ -22,13 +26,36 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── In-memory report storage (in production, use a database) ──
+// ── Report Storage Functions ──
 
-let reports = [];
+function loadReports() {
+    try {
+        if (fs.existsSync(REPORTS_FILE)) {
+            const data = fs.readFileSync(REPORTS_FILE, 'utf-8');
+            return JSON.parse(data);
+        }
+    } catch (err) {
+        console.error('Error loading reports file:', err.message);
+    }
+    return [];
+}
+
+function saveReports(reports) {
+    try {
+        fs.writeFileSync(REPORTS_FILE, JSON.stringify(reports, null, 2), 'utf-8');
+        return true;
+    } catch (err) {
+        console.error('Error saving reports file:', err.message);
+        return false;
+    }
+}
+
+// Load existing reports on startup
+let reports = loadReports();
+console.log(`[STARTUP] Loaded ${reports.length} existing report(s) from file.`);
 
 // ── Static file serving ──
 
-// Serve frontend files from the frontend directory
 app.use(express.static(path.join(__dirname, '..', 'frontend')));
 
 // ── API Routes ──
@@ -41,25 +68,15 @@ app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         app: 'GBV Help App',
+        totalReports: reports.length,
+        storage: 'file-based (reports.json)',
         timestamp: new Date().toISOString()
     });
 });
 
 /**
  * POST /api/reports
- * Submit a new GBV report
- * 
- * Request body:
- * {
- *   anonymous: boolean,
- *   name: string (optional),
- *   phone: string (optional),
- *   type: string (required),
- *   description: string (required),
- *   location: string (optional),
- *   authority: string (required),
- *   notifyContacts: boolean
- * }
+ * Submit a new GBV report (saved to file)
  */
 app.post('/api/reports', (req, res) => {
     const {
@@ -93,31 +110,69 @@ app.post('/api/reports', (req, res) => {
         authority,
         notifyContacts,
         status: 'received',
-        serverNote: 'Report received by GBV Help App server'
+        serverNote: 'Report received and saved by GBV Help App server'
     };
 
     reports.push(report);
 
-    console.log(`[NEW REPORT] ID: ${report.id} | Type: ${report.type} | Authority: ${report.authority}`);
-    console.log(`[NEW REPORT] Description: ${description.substring(0, 100)}...`);
+    // Save to file immediately
+    const saved = saveReports(reports);
 
-    res.status(201).json({
-        success: true,
-        message: 'Report submitted successfully. A trusted authority will follow up.',
-        reportId: report.id,
-        timestamp: report.timestamp
-    });
+    if (saved) {
+        console.log(`[NEW REPORT] ID: ${report.id} | Type: ${report.type} | Authority: ${report.authority}`);
+        console.log(`[NEW REPORT] Description: ${description.substring(0, 100)}...`);
+        console.log(`[NEW REPORT] Total reports in storage: ${reports.length}`);
+
+        res.status(201).json({
+            success: true,
+            message: 'Report submitted successfully. A trusted authority will follow up.',
+            reportId: report.id,
+            timestamp: report.timestamp,
+            stored: true
+        });
+    } else {
+        // Even if file save fails, still return success (in-memory)
+        res.status(201).json({
+            success: true,
+            message: 'Report submitted but could not be saved to file. Please check server logs.',
+            reportId: report.id,
+            timestamp: report.timestamp,
+            stored: false
+        });
+    }
 });
 
 /**
  * GET /api/reports
- * Get all reports (for admin/authority use)
- * In production, this should require authentication
+ * Get all reports (for admin use)
  */
 app.get('/api/reports', (req, res) => {
     res.json({
         total: reports.length,
         reports: reports
+    });
+});
+
+/**
+ * GET /api/reports/stats
+ * Get report statistics (must be before /:id to avoid route conflict)
+ */
+app.get('/api/reports/stats', (req, res) => {
+    const byType = {};
+    const byAuthority = {};
+    reports.forEach(r => {
+        byType[r.type] = (byType[r.type] || 0) + 1;
+        byAuthority[r.authority] = (byAuthority[r.authority] || 0) + 1;
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    const todayCount = reports.filter(r => r.timestamp.startsWith(today)).length;
+
+    res.json({
+        totalReports: reports.length,
+        todayReports: todayCount,
+        byType,
+        byAuthority
     });
 });
 
@@ -131,6 +186,24 @@ app.get('/api/reports/:id', (req, res) => {
         return res.status(404).json({ error: 'Report not found.' });
     }
     res.json(report);
+});
+
+/**
+ * DELETE /api/reports/:id
+ * Delete a report by ID
+ */
+app.delete('/api/reports/:id', (req, res) => {
+    const index = reports.findIndex(r => r.id === req.params.id);
+    if (index === -1) {
+        return res.status(404).json({ error: 'Report not found.' });
+    }
+    const deleted = reports.splice(index, 1)[0];
+    saveReports(reports);
+    res.json({
+        success: true,
+        message: 'Report deleted.',
+        deletedReport: deleted
+    });
 });
 
 /**
@@ -215,11 +288,14 @@ app.get('*', (req, res) => {
 // ── Start Server ──
 
 app.listen(PORT, () => {
-    console.log('═══════════════════════════════════════');
+    console.log('═══════════════════════════════════════════');
     console.log('  GBV Help App - Backend Server');
-    console.log('═══════════════════════════════════════');
+    console.log('═══════════════════════════════════════════');
     console.log(`  Server running at: http://localhost:${PORT}`);
     console.log(`  Frontend: http://localhost:${PORT}`);
+    console.log(`  Admin Dashboard: http://localhost:${PORT}/admin`);
     console.log(`  API Health: http://localhost:${PORT}/api/health`);
-    console.log('═══════════════════════════════════════');
+    console.log(`  Reports File: ${REPORTS_FILE}`);
+    console.log(`  Stored Reports: ${reports.length}`);
+    console.log('═══════════════════════════════════════════');
 });

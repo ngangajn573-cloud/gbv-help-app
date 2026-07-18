@@ -38,6 +38,7 @@
                 <li><a href="#report" class="nav-link">Report</a></li>
                 <li><a href="#emergency" class="nav-link">Emergency</a></li>
                 <li><a href="#contacts" class="nav-link">Trusted Contacts</a></li>
+                <li><a href="#myreports" class="nav-link">My Reports</a></li>
                 <li><a href="#resources" class="nav-link">Resources</a></li>
             </ul>
         </nav>
@@ -227,6 +228,21 @@
             </ul>
         </section>
 
+        <!-- MY REPORTS -->
+        <section id="myreports" class="page">
+            <div class="page-header">
+                <h2>My Reports</h2>
+                <p>View reports you have submitted from this device. Reports are stored locally.</p>
+            </div>
+
+            <div id="myReportsList"></div>
+
+            <div id="myReportsEmpty" class="card" style="text-align:center; margin-top:20px;">
+                <p style="color: var(--text-muted);">No reports submitted yet from this device.</p>
+                <a href="#report" class="btn btn-primary" style="margin-top:12px;">Submit a Report</a>
+            </div>
+        </section>
+
         <!-- RESOURCES -->
         <section id="resources" class="page">
             <div class="page-header">
@@ -250,6 +266,52 @@
     </div>
 
     <script src="app.js"></script>
+    <script>
+        // My Reports viewer (runs after app.js)
+        function renderMyReports() {
+            const list = document.getElementById('myReportsList');
+            const empty = document.getElementById('myReportsEmpty');
+            try {
+                const reports = JSON.parse(localStorage.getItem('gbv_reports_log')) || [];
+                if (reports.length === 0) {
+                    list.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+                empty.classList.add('hidden');
+                list.innerHTML = reports.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(r => `
+                    <div class="card" style="margin-bottom:12px; border-left:4px solid var(--purple);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <strong style="color:var(--purple);">${escapeHtml(r.type || 'Unknown')}</strong>
+                                <span style="color:var(--text-muted); font-size:13px; margin-left:8px;">→ ${escapeHtml(r.authority || 'unknown')}</span>
+                            </div>
+                            <span style="font-size:12px; color:var(--text-muted);">${r.timestamp ? new Date(r.timestamp).toLocaleString() : ''}</span>
+                        </div>
+                        <p style="margin-top:10px; font-size:14px; color:var(--text-muted);">${escapeHtml((r.description || '').substring(0, 150))}${(r.description || '').length > 150 ? '...' : ''}</p>
+                        <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">${r.anonymous ? 'Anonymous' : 'Named'} · ${r.location || 'No location'}</div>
+                        <div style="margin-top:8px; font-size:11px;">
+                            <span style="color:${r.status === 'submitted' ? 'var(--success)' : 'var(--warning)'}">● ${r.status || 'saved'}</span>
+                            ${r.serverNote ? '<span style="color:var(--success); margin-left:8px;">✓ Server confirmed</span>' : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                list.innerHTML = '<p style="color:var(--text-muted);">Error loading reports.</p>';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => renderMyReports());
+        // Re-render when navigating to My Reports page
+        (function() {
+            const observer = new MutationObserver(() => {
+                const page = document.getElementById('myreports');
+                if (page && page.classList.contains('active')) {
+                    renderMyReports();
+                }
+            });
+            observer.observe(document.getElementById('myreports'), { attributes: true, attributeFilter: ['class'] });
+        })();
+    </script>
 </body>
 
 </html>
